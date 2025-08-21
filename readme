@@ -1,0 +1,25 @@
+# Main 
+python yolo_detect.py --model yolo11n-pose.pt --source usb0 --resolution 640x480 --thresh 0.5
+
+# Menggunakan model pose detection yang benar
+python human_pose_detect.py --model yolo11n-pose.pt --source usb0 --resolution 640x480
+
+# Atau gunakan model pose lainnya
+python human_pose_detect.py --model yolo8n-pose.pt --source usb0 --resolution 640x480
+
+# Atau gunakan model yang sudah ada di folder Anda
+python human_pose_detect.py --model yolo11n.pt --source usb0 --resolution 640x480
+
+----------------------------------------------------------------------------------------
+
+# Menggunakan model default
+python human_pose_detect.py --source usb0
+
+# Menggunakan model custom
+python human_pose_detect.py --model_det yolov8s.pt --model_pose yolov8s-pose.pt --source usb0
+
+# Dengan threshold dan resolusi custom
+python human_pose_detect.py --model_det yolo11n.pt --model_pose yolo11n-pose.pt --source 0 --thresh 0.6 --resolution 1280x720
+
+# Menggunakan model detection saja (pose akan menggunakan detection juga)
+python human_pose_detect.py --model_det yolov8n.pt --model_pose yolov8n.pt --source usb0
