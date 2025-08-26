@@ -3,7 +3,7 @@ import time
 import json
 import numpy as np
 import paho.mqtt.client as mqtt 
-from gpiozero import LED
+from gpiozero import LED, OutputDevice
 from ultralytics import YOLO
 
 MQTT_BROKER = "192.168.0.174"
@@ -21,8 +21,10 @@ resW, resH = 640, 480
 gpio_pin_lamp = 26
 gpio_pin_fan = 19
 
-led = LED(gpio_pin_lamp)
-fan = LED(gpio_pin_fan)
+# PERUBAHAN: Menggunakan OutputDevice untuk relay lamp (pin 26)
+# karena relay mungkin membutuhkan active_high=False (LOW trigger)
+led = OutputDevice(gpio_pin_lamp, active_high=False, initial_value=False)  # Untuk relay
+fan = LED(gpio_pin_fan)  # Untuk kipas tetap menggunakan LED
 
 if "usb" in cam_source:
     cam_type = "usb"
@@ -49,12 +51,11 @@ def control_device(device, action):
     global lamp_state, fan_state
     if device == "lamp":
         if action == "turn_on":
-            led.on()
+            led.on()  # PERUBAHAN: Relay akan trigger LOW karena active_high=False
             lamp_state = 1
         elif action == "turn_off":
-            led.off()
+            led.off()  # PERUBAHAN: Relay akan kembali HIGH (tidak aktif)
             lamp_state = 0
-        print(f"AKSI DARI BACKEND: Menjalankan '{action}' pada '{device}'")
     elif device == "fan":
         if action == "turn_on":
             fan.on()
@@ -62,18 +63,14 @@ def control_device(device, action):
         elif action == "turn_off":
             fan.off()
             fan_state = 0
-        print(f"AKSI DARI BACKEND: Menjalankan '{action}' pada '{device}'")
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        print(f"Terhubung ke MQTT Broker di {MQTT_BROKER}!")
         client.subscribe(ACTION_TOPIC)
-        print(f"SUBSCRIBE ke topik aksi: {ACTION_TOPIC}")
     else:
         print(f"Gagal terhubung ke MQTT, kode error: {rc}")
 
 def on_message(client, userdata, msg):
-    print(f"PESAN DITERIMA di topik {msg.topic}")
     try:
         payload = json.loads(msg.payload.decode())
         device = payload.get("device")
@@ -130,13 +127,11 @@ try:
             is_person_reported = True
             payload = json.dumps({"motion_detected": True})
             client.publish(SENSOR_TOPIC, payload)
-            print(f" PUBLISH: Pose Terdeteksi!")
 
         elif should_be_inactive and is_person_reported:
             is_person_reported = False
             payload = json.dumps({"motion_cleared": True})
             client.publish(SENSOR_TOPIC, payload)
-            print(f"📡 PUBLISH: Pose Tidak Terdeteksi!")
 
         # Menampilkan visualisasi 
         lamp_status = "Light ON" if lamp_state == 1 else "Light OFF"
